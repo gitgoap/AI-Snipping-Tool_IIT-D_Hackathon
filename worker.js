@@ -6,6 +6,31 @@
 //   title: chrome.runtime.getManifest().name,
 //   message: e.message || e
 // });
+function sendApiRequest(text) {
+    chrome.storage.sync.get('apiKey', function (data) {
+        const apiKey = data.apiKey;
+        if (apiKey) {
+            // Use the API key in the request
+            fetch('https://api.google.com/gemini', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${apiKey}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ text: text })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Success:', data);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        } else {
+            alert('Please set your API key in the Options page.');
+        }
+    });
+}
 
 chrome.action.onClicked.addListener(async tab => {
   try {
@@ -55,7 +80,7 @@ chrome.runtime.onMessage.addListener((request, sender, response) => {
     }
     chrome.tabs.captureVisibleTab(sender.tab.windowId, {
       format: 'png'
-    }, async href => {
+    }, async (href) => {
       try {
         const target = {
           tabId: sender.tab.id
@@ -100,7 +125,7 @@ chrome.runtime.onMessage.addListener((request, sender, response) => {
           'lang': 'eng',
           'frequently-used': ['eng', 'fra', 'deu', 'rus', 'ara'],
           'accuracy': '4.0.0'
-        }, prefs => chrome.scripting.executeScript({
+        }, (prefs) => {chrome.scripting.executeScript({
           target,
           func: (prefs, href, box) => {
             const em = document.querySelector('ocr-result:last-of-type');
@@ -116,11 +141,11 @@ chrome.runtime.onMessage.addListener((request, sender, response) => {
             width: width * devicePixelRatio,
             height: height * devicePixelRatio,
             left: left * devicePixelRatio,
-            top: top * devicePixelRatio
-          }]
-        }));
-      }
-      catch (e) {
+            top: top * devicePixelRatio,
+          }],
+        });
+      });
+      }catch (e) {
         console.error(e);
         
       }
